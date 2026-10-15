@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+body { background-color: #b4b4b4; font-size: 1.2em; }
+.section { width: 50%; background-color: #e6e6e6; margin-bottom: 0.2em; padding: 0.3em; border: 1px solid; }
+.sectionmain { width: 50%; background-color: #e6e6e6; margin-bottom: 0.2em; padding: 0.3em; border: 1px solid; height: 50dvh; max-height: 50dvh; overflow: auto; }
+.task { display: flex; background-color: #fae6e6; }
+.taskcompl { display: flex; background-color: #e6fae6; }
+.ctrls { margin-left: auto; }
+</style>
+</head>
+<body>
+<div class="section"><form id="addTask"><input type="text" size="90" min="1" max="255" name="taskText" required><button type="submit">Добавить задачу</button></form></div>
+<div class="sectionmain" id="tasks"></div>
+<div class="section" id="etc"><button id="btnAll">Все</button><button id="btnActiv">Активные</button><button id="btnCompl">Завершенные</button><input id="searchString" placeholder="Поиск"></div>
+<script>
+    let tasks = [];
+    const storedTasks = localStorage.getItem("toDoTasks");
+    if (storedTasks !== null) {
+        tasks = JSON.parse(storedTasks);
+    }
+    const tasksView = document.querySelector("#tasks");
+    updateTasksView();
+    const addForm = document.querySelector("#addTask");
+    const etc = document.querySelector("#etc");
+    
+    addForm.addEventListener('submit', function (event) {
+        event.preventDefault();
+        formData = new FormData(addForm);
+        const taskText = formData.get('taskText');
+        const task = { status: 0, text: taskText }
+        tasks.push(task);
+        storeTasks();
+        updateTasksView();
+    });
+    tasksView.addEventListener('click', function (event) {
+        if (event.target.id[0] === "c") {
+            const index = parseInt(event.target.id.split('-')[1]);
+            tasks[index].status = 1;
+            storeTasks();
+            updateTasksView();
+        }
+        if (event.target.id[0] === "d") {
+            const index = parseInt(event.target.id.split('-')[1]);
+            tasks.splice(index, 1);
+            storeTasks();
+            updateTasksView();
+        }
+    });
+    etc.addEventListener('click', function (event) {
+        if (event.target.id === "btnAll") {
+        updateTasksView(0);
+        }
+        if (event.target.id === "btnActiv") {
+            updateTasksView(1);
+        }
+        if (event.target.id === "btnCompl") {
+            updateTasksView(2);
+        }
+    });
+    etc.addEventListener('input', function (event) {
+        searchInput = document.querySelector("#searchString");
+        const searchStr = searchInput.value;
+        if (searchStr !== "") {
+            updateTasksView(0, searchStr);
+        } else {
+            updateTasksView();
+        }
+    });
+    
+    function updateTasksView(sortBy, searchStr) {
+        tasksView.replaceChildren();
+        tasks.forEach(function (taskObj, index) {
+            if (sortBy === 1 && taskObj.status === 1|| sortBy === 2 && taskObj.status === 0) {
+                return;
+            }
+            if (searchStr !== undefined && !taskObj.text.includes(searchStr)) {
+                return;
+            }
+            const taskP = document.createElement("p");
+            if (taskObj.status === 0) {
+            taskP.className = "task";
+            taskP.textContent = taskObj.text;
+            taskP.innerHTML = taskP.innerHTML + "<span class=\"ctrls\"><button id=\"c-" + index + "\">Завершить</button><button id=\"d-" + index + "\">Удалить</button></span>";
+            } else {
+                taskP.className = "taskcompl";
+                taskP.textContent = taskObj.text;
+                taskP.innerHTML = taskP.innerHTML + "<span class=\"ctrls\"><button id=\"d-" + index + "\">Удалить</button></span>";
+            }
+            tasksView.append(taskP);
+        });
+    }
+    
+    function storeTasks() {
+        localStorage.setItem("toDoTasks", JSON.stringify(tasks));
+    }
+</script>
+</body>
+</html>
